@@ -76,7 +76,7 @@ Copy the Quick Action to your Services folder:
 cp -r workflows/Redact\ Client\ Info.workflow ~/Library/Services/
 ```
 
-**Note**: You may need to enable the Quick Action in System Settings > Privacy & Security > Extensions > Finder.
+**Note**: You may need to enable the Quick Action. Right-click any file, hover over Quick Actions, click Customize, and enable "Redact Client Info".
 
 ## Usage
 
@@ -182,11 +182,24 @@ Install Claude CLI from https://claude.ai/download and ensure it's in your PATH.
 brew install tesseract
 ```
 
-### Quick Action not appearing
+### Quick Action not appearing (macOS Tahoe/Sequoia)
 
-1. Open System Settings > Privacy & Security > Extensions > Finder
-2. Enable "Redact Client Info"
-3. Restart Finder: `killall Finder`
+**Method 1 - Via Finder (Easiest):**
+1. Right-click any PDF file in Finder
+2. Hover over **Quick Actions**
+3. Click **Customize...** at the bottom
+4. Enable "Redact Client Info" in the Extensions window
+
+**Method 2 - Via System Settings:**
+1. Open **System Settings**
+2. Go to **General** → **Login Items & Extensions**
+3. Click on **Finder** (under Extensions section)
+4. Enable "Redact Client Info"
+
+**If still not working:**
+```bash
+killall Finder
+```
 
 ### OCR quality issues
 
