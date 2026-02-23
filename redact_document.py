@@ -20,7 +20,7 @@ from pathlib import Path
 # Try to import python-docx for DOCX support
 try:
     from docx import Document
-    from docx.shared import RgbColor
+    from docx.shared import RGBColor
     DOCX_SUPPORT = True
 except ImportError:
     DOCX_SUPPORT = False
@@ -59,6 +59,21 @@ def extract_text_from_docx(docx_path):
             for cell in row.cells:
                 if cell.text.strip():
                     text_parts.append(cell.text)
+
+    # Extract from headers and footers
+    for section in doc.sections:
+        for header_footer in (section.header, section.first_page_header,
+                              section.even_page_header, section.footer,
+                              section.first_page_footer, section.even_page_footer):
+            if header_footer is not None:
+                for para in header_footer.paragraphs:
+                    if para.text.strip():
+                        text_parts.append(para.text)
+                for table in header_footer.tables:
+                    for row in table.rows:
+                        for cell in row.cells:
+                            if cell.text.strip():
+                                text_parts.append(cell.text)
 
     return "\n".join(text_parts)
 
@@ -396,6 +411,54 @@ def redact_docx(docx_path, terms, output_path=None):
                         else:
                             para.add_run(new_text)
                         break
+
+    # Process headers and footers
+    for section in doc.sections:
+        for header_footer in (section.header, section.first_page_header,
+                              section.even_page_header, section.footer,
+                              section.first_page_footer, section.even_page_footer):
+            if header_footer is not None:
+                for para in header_footer.paragraphs:
+                    original_text = para.text
+                    new_text = original_text
+
+                    for term in terms:
+                        if term.lower() in new_text.lower():
+                            pattern = re.compile(re.escape(term), re.IGNORECASE)
+                            matches = pattern.findall(new_text)
+                            total_redactions += len(matches)
+                            new_text = pattern.sub(redact_marker, new_text)
+
+                    if new_text != original_text:
+                        for run in para.runs:
+                            run.text = ""
+                        if para.runs:
+                            para.runs[0].text = new_text
+                        else:
+                            para.add_run(new_text)
+
+                for table in header_footer.tables:
+                    for row in table.rows:
+                        for cell in row.cells:
+                            original_text = cell.text
+                            new_text = original_text
+
+                            for term in terms:
+                                if term.lower() in new_text.lower():
+                                    pattern = re.compile(re.escape(term), re.IGNORECASE)
+                                    matches = pattern.findall(new_text)
+                                    total_redactions += len(matches)
+                                    new_text = pattern.sub(redact_marker, new_text)
+
+                            if new_text != original_text:
+                                for para in cell.paragraphs:
+                                    for run in para.runs:
+                                        run.text = ""
+                                    if para.runs:
+                                        para.runs[0].text = new_text
+                                    else:
+                                        para.add_run(new_text)
+                                    break
 
     # Generate output path
     if not output_path:
