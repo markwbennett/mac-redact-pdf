@@ -130,7 +130,7 @@ Document text to analyze:
     try:
         # Call Claude CLI
         result = subprocess.run(
-            ['claude', '-p', full_prompt],
+            ['claude', '--print', '--model', 'claude-sonnet-4-5-20250929', full_prompt],
             capture_output=True,
             text=True,
             timeout=120
@@ -392,25 +392,24 @@ def redact_docx(docx_path, terms, output_path=None):
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
-                original_text = cell.text
-                new_text = original_text
+                for para in cell.paragraphs:
+                    original_para_text = para.text
+                    new_para_text = original_para_text
 
-                for term in terms:
-                    if term.lower() in new_text.lower():
-                        pattern = re.compile(re.escape(term), re.IGNORECASE)
-                        matches = pattern.findall(new_text)
-                        total_redactions += len(matches)
-                        new_text = pattern.sub(redact_marker, new_text)
+                    for term in terms:
+                        if term.lower() in new_para_text.lower():
+                            pattern = re.compile(re.escape(term), re.IGNORECASE)
+                            matches = pattern.findall(new_para_text)
+                            total_redactions += len(matches)
+                            new_para_text = pattern.sub(redact_marker, new_para_text)
 
-                if new_text != original_text:
-                    for para in cell.paragraphs:
+                    if new_para_text != original_para_text:
                         for run in para.runs:
                             run.text = ""
                         if para.runs:
-                            para.runs[0].text = new_text
+                            para.runs[0].text = new_para_text
                         else:
-                            para.add_run(new_text)
-                        break
+                            para.add_run(new_para_text)
 
     # Process headers and footers
     for section in doc.sections:
@@ -440,25 +439,24 @@ def redact_docx(docx_path, terms, output_path=None):
                 for table in header_footer.tables:
                     for row in table.rows:
                         for cell in row.cells:
-                            original_text = cell.text
-                            new_text = original_text
+                            for para in cell.paragraphs:
+                                original_para_text = para.text
+                                new_para_text = original_para_text
 
-                            for term in terms:
-                                if term.lower() in new_text.lower():
-                                    pattern = re.compile(re.escape(term), re.IGNORECASE)
-                                    matches = pattern.findall(new_text)
-                                    total_redactions += len(matches)
-                                    new_text = pattern.sub(redact_marker, new_text)
+                                for term in terms:
+                                    if term.lower() in new_para_text.lower():
+                                        pattern = re.compile(re.escape(term), re.IGNORECASE)
+                                        matches = pattern.findall(new_para_text)
+                                        total_redactions += len(matches)
+                                        new_para_text = pattern.sub(redact_marker, new_para_text)
 
-                            if new_text != original_text:
-                                for para in cell.paragraphs:
+                                if new_para_text != original_para_text:
                                     for run in para.runs:
                                         run.text = ""
                                     if para.runs:
-                                        para.runs[0].text = new_text
+                                        para.runs[0].text = new_para_text
                                     else:
-                                        para.add_run(new_text)
-                                    break
+                                        para.add_run(new_para_text)
 
     # Generate output path
     if not output_path:
